@@ -1,0 +1,98 @@
+大家好，本次我写的是基于qt图形化界面的翻牌程序，本次程序有几个重要的组成部分，接下来我来为大家一一的讲述程序的组成和每部分的具体架构以及功能。
+首先是主窗体类 MainWindow类  它其中 包含了放置控件的容器 ui指针，用于相应信号的计时器timer ，判断选中单选框的judge()函数，三个按钮信号 用于反应按下按钮并选择游戏难度。游戏难度分为三个级别 简单 中等 困难，分别对应的棋盘尺寸是4*4 6*6 8*8 一个视图类sc主窗口类的用于对变量设定初值以及分配控件。
+另一个类是myitem类 它用于表示一个方格，它的成员变量有能够表示坐标的xy 用于存放图片文件名数据的成员变量data ，对于一个单元格是否被选择的标志 flag,是否选中两个单元格的got_a_pair 表示一个场景的the_sence
+最后一个类的描述整个场景的myscence类，一个用于所有牌的 item[8][8],两个用于临时存放的变量tempitemA.tempitemB 计时器tme用于更新用于即使和呼应connect函数
+整体的架构是 在主窗口勒种创建一个场景类，在场景类中放置很多的item类然后在item类中添加鼠标点击时间并完成。
+通过点击来显示这个item类所代表的在资源文件中的图片然后显示。通过QTimer类来实现显示不是一对时进行一段时间的暂停。从而实现程序的执行。
+接下来我将介绍此次程序各个组件的实现原理和具体步骤，首先我将介绍的是本次程序的主窗口类 MainWindow类，MainWindow类采用了OOP的特性，他的construct function采用了面向对象思想中的继承思想， 继承了QWidget类，首先去定义并构建了一一个QWidget类的界面 this->setupUI(this) 这个句子用于设置这个界面。另外 创建了主场景Myscence类 这个类我们将在后面进行介绍 他是用于存放本次程序的核心代码 用于点击牌的方法，this->grabKeyboard() 用于使这个主窗口界面具有显示主场景的能力。
+MainWindow::~MainWindow() 是这个类的析构函数 用于删除分配的内存 放置内存泄漏现象。不仅如此在Mainwindow.cpp文件中我们还定义了三个Button_click()函数槽，用于从信号转导槽，他们三个都是槽函数，用于响应鼠标点击按钮后发生的事件。具体分析代码来看首先是调用了myscence的构造函数新构造一个主场景并在主场景中添加相应各格子，也就是生成并初始化整个游戏，另外是获得库指令 指定生成图片的库
+
+第二个是Myitem组建，构造函数用于指定默认生成图 以及修改大小，然后对myitem 即每一张牌添加mousepressenvent事件 鼠标按下的时候去加载图片
+QString path = ":/new/prefix1/";
+    QString fn ;
+    int cutline;
+    if(this->the_scence->typeButton == 1)
+       fn = "ChineseNumber/",cutline=0;
+    else if(this->the_scence->typeButton == 3)
+        fn = "elements/",cutline=30;
+    else
+        fn = "pet/",cutline=100;
+    path.append(fn);
+上述代码是生成图片路径的代码 对于typebutton的只我们选定一个库
+
+    QString filname = QString::number(data,10);//每一个item类对应的data文件名
+    QString fileType = data<cutline?".jpg":".png"; //检查后缀名 防止打开失败
+    path.append(filname);
+    path.append(fileType);
+这段函数用于指定生成图片的格式类型 是jpg还是png 然后添加到QString尾部 得到一个path 是你所要显示文件的最终路径 最终通过 QPixmap类去读取一个图片并实现加载，最终会显示在主场景中。另外对于mysence住场景类 我们有tempitemA和tempitemB 这两个类用于存放当前的一对按下去的按键，在按下去的时候 我们先对他们进行标记 在松开的时候进行判断和比较 如果构成一对且相同 就进行解锁操作 如果他们不相同 就进行窗口冻结并显示，让客户去记忆。在冻结窗口的情况下无法去点击也无法去做任何事。
+
+最后一个组件是Mysence 它的构造函数用于为每个单元格分配内存空间，并在主场景中计算好出现的相对位置，并且对计时器分配控件
+QTimer组建是计时器组件 一般情况下和connect函数 配合使用 
+使用格式一般是connect(timber,SIGNAL(timeout()),this,funciton) 意思是指当计时器每即使一定时间之后会出发timeout信号并激活槽，
+    connect(tme, SIGNAL(timeout()), this, SLOT(update_cooldown()));
+这是在代码中的具体用法 update_cooldown是冻结函数。计时器的即计时用法 timber->start(m) 单位是毫秒 意思是指从调用这个函数开始等待m毫秒的时间 可以用作堵塞窗口。
+
+
+
+QVector<int> vec;
+    bool number[100];
+    memset(number,0,sizeof(number));
+    for(int i=0;i<h*h/2;i++)
+    {
+        int index = rand()%Filenum+1;
+        if(number[index] ==false)
+        {
+            number[index]=true;
+            vec.push_back(index);
+            qDebug()<<index;
+        }
+        else --i;
+    }
+    bool vis[200];
+    int m = 0;
+    memset(vis,0,sizeof(vis));
+    QString path = ":/new/prefix1/";
+    QString filType = ".png";
+    for(int i=0;i<h*h/2;++i){
+        int pos = rand()%(h*h);
+        if(vis[pos]==false){
+            vis[pos]=true;
+            this->items[pos/h][pos%h]->data = vec[m];
+            m++;
+        }
+        else --i;
+    }
+    m = 0;
+    for(int i=0;i<h*h/2;++i){
+        int pos = rand()%(h*h);
+        if(vis[pos]==false){
+            vis[pos]=true;
+            this->items[pos/h][pos%h]->data = vec[m++];
+            this->items[pos/h][pos%h]->flag = false;
+        }
+        else --i;
+    }
+函数代码中的这一段是用于生成随机数并且对应到每个单元格对象的data数据中 让每个单元格都记住自己的随机数（也就是对应在文件夹中的文件名）
+
+
+最后介绍操函数
+void myScence::update_cooldown()
+{
+
+    this->cooldown=1;
+    QSize pic(25,25);
+    QPixmap beforPic(":/new/prefix1/Block.png");
+  //  if(this->tempitemA->flag==false)
+        this->tempitemA->setPixmap(beforPic.scaled(pic));
+//    if(this->tempitemB->flag==false)
+        this->tempitemB->setPixmap(beforPic.scaled(pic));
+  //  this->tempitemA=this->tempitemB=NULL;
+        this->tempitemA->flag = this->tempitemB->flag=false;
+        this->tempitemA=this->tempitemB=NULL;
+
+    this->tme->stop();
+    this->cooldown = 0;
+
+}
+
+cooldown函数用于选错图像暂停一段时间之后的清空 清空操作一个是用于将冻结窗口标志位的打开 将被点击的单元格恢复成原样并且将访问标志位清空 最后打开单窗口冻结操作 并stop这个计时器。因为我们的计时器是一次性使用的 每一次点击匹配不成功之后都会新建一个timber并开始start激活connect对应的update函数。
